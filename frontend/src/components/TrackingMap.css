@@ -1,0 +1,113 @@
+.tracking-map-container {
+    position: relative;
+    width: 100%;
+    height: 600px;
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+}
+
+.leaflet-container {
+    background: var(--bg-secondary);
+    font-family: 'Inter', sans-serif;
+}
+
+.courier-popup {
+    min-width: 250px;
+}
+
+.courier-name {
+    margin: 0 0 var(--spacing-md) 0;
+    color: var(--primary);
+    font-size: 1.1rem;
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: var(--spacing-sm);
+}
+
+.courier-info p {
+    margin: var(--spacing-sm) 0;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.courier-info strong {
+    color: #000;
+    margin-right: var(--spacing-xs);
+}
+
+.coordinates {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    background: #f0f0f0;
+    padding: var(--spacing-xs);
+    border-radius: 4px;
+    margin-top: var(--spacing-sm);
+}
+
+.status-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-available {
+    background: var(--success);
+    color: white;
+}
+
+.status-busy {
+    background: var(--warning);
+    color: white;
+}
+
+.status-offline {
+    background: var(--text-muted);
+    color: white;
+}
+
+.map-legend {
+    position: absolute;
+    top: var(--spacing-md);
+    right: var(--spacing-md);
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-md);
+    z-index: 1000;
+    box-shadow: var(--shadow-md);
+}
+
+.map-legend h4 {
+    margin: 0 0 var(--spacing-md) 0;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.legend-icon {
+    font-size: 1.2rem;
+}
+
+@media (max-width: 768px) {
+    .tracking-map-container {
+        height: 400px;
+    }
+
+    .map-legend {
+        top: auto;
+        bottom: var(--spacing-md);
+        right: var(--spacing-md);
+        font-size: 0.8rem;
+    }
+}
