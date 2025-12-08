@@ -1,8 +1,0 @@
-[providers]
-node = "18"
-
-[phases.install]
-cmds = ["npm install"]
-
-[start]
-cmd = "npm start"
