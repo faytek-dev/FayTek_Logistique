@@ -1,0 +1,14 @@
+# Configuration Nixpacks a la racine
+# Dit a Nixpacks ou trouver l'application
+
+[phases.setup]
+nixPkgs = ["nodejs_18"]
+
+[phases.install]
+cmds = ["cd backend && npm install"]
+
+[phases.build]
+cmds = ["echo 'Build skipped'"]
+
+[start]
+cmd = "cd backend && npm start"
