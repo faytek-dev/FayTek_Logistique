@@ -189,6 +189,7 @@ npm run build
 # Backend (déjà prêt avec Docker)
 ```
 
+<<<<<<< HEAD
 ## 🚀 Déploiement en Production
 
 ### 🌐 Déploiement Rapide (Gratuit)
@@ -255,6 +256,8 @@ curl https://votre-service.onrender.com/api/auth/login \
 
 **⚠️ Note** : Le plan gratuit Render "hiberne" après 15 minutes d'inactivité. Premier chargement : ~30-60 secondes.
 
+=======
+>>>>>>> ebbb113cb76f2b5874fb97e8bee28499a553e3de
 ## 🐳 Docker
 
 Les images Docker sont optimisées pour la production avec :

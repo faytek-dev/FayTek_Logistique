@@ -2,11 +2,17 @@ services:
   - type: web
     name: logistics-backend
     env: node
+<<<<<<< HEAD
     plan: free
     rootDir: backend
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /health
+=======
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+>>>>>>> ebbb113cb76f2b5874fb97e8bee28499a553e3de
     envVars:
       - key: NODE_ENV
         value: production
@@ -16,7 +22,12 @@ services:
         sync: false
       - key: JWT_SECRET
         generateValue: true
+<<<<<<< HEAD
       - key: JWT_EXPIRE
         value: 7d
       - key: CORS_ORIGIN
         value: "*"
+=======
+      - key: CORS_ORIGIN
+        sync: false
+>>>>>>> ebbb113cb76f2b5874fb97e8bee28499a553e3de

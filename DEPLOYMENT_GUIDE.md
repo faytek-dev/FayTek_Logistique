@@ -47,6 +47,7 @@ Ce guide vous permet de mettre votre application **FayTek Logistique** en ligne 
     *   **Build Command**: `npm install`
     *   **Start Command**: `npm start`
     *   **Plan**: Free
+<<<<<<< HEAD
     *   **Branch**: `main` (ou `master` selon votre repo)
 
 6.  Descendez jusqu'à **Environment Variables** et ajoutez :
@@ -55,12 +56,20 @@ Ce guide vous permet de mettre votre application **FayTek Logistique** en ligne 
     *   `JWT_EXPIRE` : `7d`
     *   `NODE_ENV` : `production`
     *   `PORT` : `10000`
+=======
+
+6.  Descendez jusqu'à **Environment Variables** et ajoutez :
+    *   `MONGODB_URI` : (Collez votre URL MongoDB Atlas de l'étape 1)
+    *   `JWT_SECRET` : (Inventez un code secret long)
+    *   `NODE_ENV` : `production`
+>>>>>>> ebbb113cb76f2b5874fb97e8bee28499a553e3de
     *   `CORS_ORIGIN` : `*` (Pour commencer, on restreindra plus tard)
 
 7.  Cliquez sur **Create Web Service**.
 8.  Attendez que le déploiement finisse. Render vous donnera une URL (ex: `https://logistics-backend-xyz.onrender.com`).
     *   **Copiez cette URL.**
 
+<<<<<<< HEAD
 ### 🐛 Dépannage Render
 
 Si votre service ne démarre pas :
@@ -83,6 +92,8 @@ Si votre service ne démarre pas :
     *   Une fois déployé, visitez `https://votre-service.onrender.com/health` dans votre navigateur.
     *   Vous devriez voir `{"success": true, "message": "Server is running", ...}`.
 
+=======
+>>>>>>> ebbb113cb76f2b5874fb97e8bee28499a553e3de
 ---
 
 ## Étape 3 : Le Frontend (Netlify)
