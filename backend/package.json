@@ -7,12 +7,8 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "test": "jest --coverage",
-<<<<<<< HEAD
     "seed": "node seed.js",
     "check-deploy": "node check-deploy.js"
-=======
-    "seed": "node seed.js"
->>>>>>> ebbb113cb76f2b5874fb97e8bee28499a553e3de
   },
   "keywords": [
     "logistics",
@@ -43,8 +39,4 @@
   "engines": {
     "node": ">=18.0.0"
   }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> ebbb113cb76f2b5874fb97e8bee28499a553e3de
