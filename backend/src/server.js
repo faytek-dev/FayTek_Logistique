@@ -13,10 +13,35 @@ const { setupSocketHandlers } = require('./socket');
 const app = express();
 const server = http.createServer(app);
 
-// Initialiser Socket.IO avec CORS
+// Configurer les origines autorisées
+const getCb = (origin, callback) => {
+    const allowedOrigins = [
+        'http://localhost:3000',
+        'http://localhost:4001',
+        'http://localhost:4000',
+        'http://127.0.0.1:4000',
+        'http://127.0.0.1:4001'
+    ];
+
+    if (process.env.CORS_ORIGIN) {
+        allowedOrigins.push(process.env.CORS_ORIGIN.trim().replace(/\/$/, ''));
+    }
+
+    // Autoriser les requêtes sans origine (comme Postman ou curl)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes(origin.replace(/\/$/, ''))) {
+        callback(null, true);
+    } else {
+        console.log('❌ CORS Blocked Origin:', origin);
+        console.log('Allowed:', allowedOrigins);
+        callback(new Error('Not allowed by CORS'));
+    }
+};
+
 const io = new Server(server, {
     cors: {
-        origin: [process.env.CORS_ORIGIN || 'http://localhost:3000', 'http://localhost:4000', 'http://127.0.0.1:4000'],
+        origin: getCb,
         methods: ['GET', 'POST'],
         credentials: true
     }
@@ -31,7 +56,7 @@ app.use(helmet({
     crossOriginEmbedderPolicy: false
 }));
 app.use(cors({
-    origin: [process.env.CORS_ORIGIN || 'http://localhost:3000', 'http://localhost:4000', 'http://127.0.0.1:4000'],
+    origin: getCb,
     credentials: true
 }));
 app.use(compression());
