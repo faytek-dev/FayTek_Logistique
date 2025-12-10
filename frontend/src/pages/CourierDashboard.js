@@ -4,6 +4,9 @@ import { tasksAPI, usersAPI } from '../services/api';
 import socketService from '../services/socket';
 import { toast } from 'react-toastify';
 import { showNotification } from '../serviceWorkerRegistration';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Geolocation } from '@capacitor/geolocation';
+import { Capacitor } from '@capacitor/core';
 import './CourierDashboard.css';
 
 const CourierDashboard = () => {
@@ -70,38 +73,54 @@ const CourierDashboard = () => {
         }
     };
 
-    const startLocationTracking = useCallback(() => {
+    const startLocationTracking = useCallback(async () => {
         if (locationTracking) return;
 
-        if (!navigator.geolocation) {
-            toast.error('La géolocalisation n\'est pas supportée');
-            return;
-        }
-
-        // Activer le Wake Lock
+        // Activer le Wake Lock (si web)
         requestWakeLock();
 
-        const id = navigator.geolocation.watchPosition(
-            (position) => {
-                const { latitude, longitude } = position.coords;
-                socketService.updateLocation(latitude, longitude);
-            },
-            (error) => console.error('Erreur GPS:', error),
-            {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 0
+        if (Capacitor.isNativePlatform()) {
+            const id = await Geolocation.watchPosition(
+                { enableHighAccuracy: true, timeout: 10000 },
+                (position, err) => {
+                    if (err) {
+                        console.error('Erreur GPS Native:', err);
+                        return;
+                    }
+                    if (position) {
+                        const { latitude, longitude } = position.coords;
+                        socketService.updateLocation(latitude, longitude);
+                    }
+                }
+            );
+            setWatchId(id);
+        } else {
+            if (!navigator.geolocation) {
+                toast.error('La géolocalisation n\'est pas supportée');
+                return;
             }
-        );
+            const id = navigator.geolocation.watchPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    socketService.updateLocation(latitude, longitude);
+                },
+                (error) => console.error('Erreur GPS:', error),
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+            setWatchId(id);
+        }
 
-        setWatchId(id);
         setLocationTracking(true);
-        toast.success('📍 Suivi GPS actif (Arrière-plan)');
+        toast.success('📍 Suivi GPS actif (Capacitor/Background)');
     }, [locationTracking]);
 
     const stopLocationTracking = useCallback(() => {
         if (watchId) {
-            navigator.geolocation.clearWatch(watchId);
+            if (Capacitor.isNativePlatform()) {
+                Geolocation.clearWatch({ id: watchId });
+            } else {
+                navigator.geolocation.clearWatch(watchId);
+            }
             setWatchId(null);
             setLocationTracking(false);
             releaseWakeLock();
@@ -230,6 +249,25 @@ const CourierDashboard = () => {
     };
 
     // ========== PHOTO CAPTURE ==========
+    const takePhoto = async () => {
+        if (Capacitor.isNativePlatform()) {
+            try {
+                const image = await Camera.getPhoto({
+                    quality: 90,
+                    allowEditing: false,
+                    resultType: CameraResultType.DataUrl,
+                    source: CameraSource.Camera
+                });
+                setPhoto(image.dataUrl);
+            } catch (err) {
+                console.warn('Capture photo annulée ou échouée', err);
+            }
+        } else {
+            // Déclencher le clic sur l'input masqué pour le web
+            document.getElementById('web-photo-input').click();
+        }
+    };
+
     const handlePhotoChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -481,8 +519,9 @@ const CourierDashboard = () => {
 
                         <div className="form-group">
                             <label className="form-label">📸 Photo du colis (Optionnel)</label>
-                            <label className="photo-upload-label">
+                            <label className="photo-upload-label" onClick={(e) => { e.preventDefault(); takePhoto(); }}>
                                 <input
+                                    id="web-photo-input"
                                     type="file"
                                     accept="image/*"
                                     capture="environment"
