@@ -1,6 +1,11 @@
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:4001';
+// Nettoyage de l'URL
+const cleanUrl = (url) => url ? url.replace(/\/$/, '') : '';
+
+const SOCKET_URL = cleanUrl(process.env.REACT_APP_SOCKET_URL) || 'http://localhost:4001';
+
+console.log('🔌 Socket Target:', SOCKET_URL);
 
 class SocketService {
     constructor() {

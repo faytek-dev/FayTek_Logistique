@@ -1,6 +1,11 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:4001';
+// Nettoyage de l'URL (enlève le slash à la fin si présent)
+const cleanUrl = (url) => url ? url.replace(/\/$/, '') : '';
+
+const API_URL = cleanUrl(process.env.REACT_APP_API_URL) || 'http://localhost:4001';
+
+console.log('🌐 API Target:', API_URL); // Log pour debugger la connexion
 
 console.log('🌐 API Configuration:', { API_URL });
 
