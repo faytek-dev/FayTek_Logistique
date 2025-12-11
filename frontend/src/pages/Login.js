@@ -11,8 +11,28 @@ const Login = () => {
     });
     const [loading, setLoading] = useState(false);
 
-    const { login } = useAuth();
+    const { login, isAuthenticated, user } = useAuth();
     const navigate = useNavigate();
+
+    // Effectuer la redirection une fois que l'état d'authentification est mis à jour
+    React.useEffect(() => {
+        if (isAuthenticated && user) {
+            console.log('✅ Authenticated, redirecting...', user.role);
+            switch (user.role) {
+                case 'admin':
+                    navigate('/admin/dashboard');
+                    break;
+                case 'dispatcher':
+                    navigate('/dispatcher/dashboard');
+                    break;
+                case 'courier':
+                    navigate('/courier/dashboard');
+                    break;
+                default:
+                    navigate('/');
+            }
+        }
+    }, [isAuthenticated, user, navigate]);
 
     const handleChange = (e) => {
         setFormData({
@@ -29,21 +49,7 @@ const Login = () => {
 
         if (result.success) {
             toast.success(`Bienvenue ${result.user.name} !`);
-
-            // Rediriger selon le rôle
-            switch (result.user.role) {
-                case 'admin':
-                    navigate('/admin/dashboard');
-                    break;
-                case 'dispatcher':
-                    navigate('/dispatcher/dashboard');
-                    break;
-                case 'courier':
-                    navigate('/courier/dashboard');
-                    break;
-                default:
-                    navigate('/');
-            }
+            // La redirection est gérée par le useEffect
         } else {
             toast.error(result.message);
         }
