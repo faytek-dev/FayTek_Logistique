@@ -3,6 +3,14 @@
   publish = "build"
   command = "CI=false npm run build"
 
+# Proxy pour contourner CORS : Tout appel à /api/... est transmis invisiblement à Railway
+[[redirects]]
+  from = "/api/*"
+  to = "https://fayteklogistique-production.up.railway.app/api/:splat"
+  status = 200
+  force = true
+
+# Fallback pour le routage React (SPA)
 [[redirects]]
   from = "/*"
   to = "/index.html"

@@ -3,9 +3,12 @@ import axios from 'axios';
 // Nettoyage de l'URL (enlève le slash à la fin si présent)
 const cleanUrl = (url) => url ? url.replace(/\/$/, '') : '';
 
-const API_URL = cleanUrl(process.env.REACT_APP_API_URL) || 'http://localhost:4001';
+// En production sur Netlify, on utilise le proxy (donc l'URL relative), sauf si on force une URL
+// Si on est en dev (localhost), on utilise le port 4001
+const isProduction = process.env.NODE_ENV === 'production';
+const API_URL = isProduction ? '' : (cleanUrl(process.env.REACT_APP_API_URL) || 'http://localhost:4001');
 
-console.log('🌐 API Target:', API_URL); // Log pour debugger la connexion
+console.log('🌐 API Target:', isProduction ? 'Netlify Proxy (Same Origin)' : API_URL); // Log pour debugger la connexion
 
 console.log('🌐 API Configuration:', { API_URL });
 
