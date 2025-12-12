@@ -13,10 +13,18 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [token, setToken] = useState(localStorage.getItem('token'));
-    const [loading, setLoading] = useState(true);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    // Initialisation synchrone pour éviter le flash de redirection
+    const [token, setToken] = useState(() => localStorage.getItem('token'));
+    const [user, setUser] = useState(() => {
+        try {
+            const savedUser = localStorage.getItem('user');
+            return savedUser ? JSON.parse(savedUser) : null;
+        } catch (e) {
+            return null;
+        }
+    });
+    const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('token'));
+    const [loading, setLoading] = useState(true); // On garde loading true pour vérifier le token via API si besoin
 
     useEffect(() => {
         const initAuth = async () => {
@@ -25,18 +33,23 @@ export const AuthProvider = ({ children }) => {
 
             if (storedToken && storedUser) {
                 try {
-                    // Vérifier si le token est toujours valide
-                    const response = await authAPI.getMe();
-                    setUser(response.data.data);
-                    setToken(storedToken);
-                    setIsAuthenticated(true);
-
-                    // Connecter Socket.IO
+                    // Connecter Socket.IO immédiatement avec ce qu'on a
                     socketService.connect(storedToken);
+
+                    // Vérifier si le token est toujours valide en arrière-plan
+                    const response = await authAPI.getMe();
+                    setUser(response.data.data); // Mise à jour avec les données fraîches
+                    // Pas besoin de re-setToken ou setIsAuthenticated car déjà fait à l'init
                 } catch (error) {
-                    console.error('Token invalide:', error);
-                    logout();
+                    console.error('Token invalide ou erreur réseau:', error);
+                    // Si vraiment invalide (401), on déconnecte. Si erreur réseau, on garde la session locale.
+                    if (error.response && error.response.status === 401) {
+                        logout();
+                    }
                 }
+            } else {
+                // Nettoyage si données incohérentes
+                logout();
             }
             setLoading(false);
         };
