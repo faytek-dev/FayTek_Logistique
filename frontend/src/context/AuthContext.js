@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
         }
     });
     const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('token'));
-    const [loading, setLoading] = useState(true); // On garde loading true pour vérifier le token via API si besoin
+    const [loading, setLoading] = useState(false); // Démarrer à false pour ne pas bloquer l'UI
 
     useEffect(() => {
         const initAuth = async () => {

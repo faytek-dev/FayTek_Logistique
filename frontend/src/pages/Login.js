@@ -121,7 +121,6 @@ const Login = () => {
                     <button
                         type="submit"
                         className="btn btn-primary btn-block"
-                        disabled={loading}
                     >
                         {loading ? (
                             <>
