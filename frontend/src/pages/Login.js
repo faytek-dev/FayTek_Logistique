@@ -44,14 +44,23 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
+        console.log('🚀 Tentative de connexion...');
 
-        const result = await login(formData.email, formData.password);
+        try {
+            const result = await login(formData.email, formData.password);
+            console.log('Réultat login:', result);
 
-        if (result.success) {
-            toast.success(`Bienvenue ${result.user.name} !`);
-            // La redirection est gérée par le useEffect
-        } else {
-            toast.error(result.message);
+            if (result.success) {
+                console.log(`✅ Bienvenue ${result.user.name} !`);
+                // toast.success(`Bienvenue ${result.user.name} !`); 
+                // La redirection est gérée par le useEffect
+            } else {
+                console.error('❌ Erreur login:', result.message);
+                alert(result.message); // Fallback visible
+            }
+        } catch (err) {
+            console.error('💥 Crash in handleSubmit:', err);
+            alert('Erreur critique dans le login');
         }
 
         setLoading(false);
