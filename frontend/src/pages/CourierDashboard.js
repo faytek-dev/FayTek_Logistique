@@ -18,10 +18,17 @@ const CourierDashboard = () => {
         fetchTasks();
         setupSocketListeners();
 
+        // Gestion automatique du GPS selon la disponibilité
+        if (availability === 'available' || availability === 'busy') {
+            startLocationTracking();
+        } else {
+            stopLocationTracking();
+        }
+
         return () => {
             stopLocationTracking();
         };
-    }, []);
+    }, [availability]); // Dépendance ajoutée
 
     const fetchTasks = async () => {
         try {
@@ -35,20 +42,13 @@ const CourierDashboard = () => {
     };
 
     const setupSocketListeners = () => {
-        // Écouter les nouvelles tâches assignées
         socketService.onTaskAssigned((data) => {
             toast.info(`📦 Nouvelle tâche: ${data.task.title}`);
-            showNotification('Nouvelle tâche assignée', {
-                body: data.task.title,
-                tag: 'task-assigned'
-            });
+            showNotification('Nouvelle tâche assignée', { body: data.task.title });
             fetchTasks();
         });
 
-        // Écouter les mises à jour de tâches
-        socketService.on('task:updated', () => {
-            fetchTasks();
-        });
+        socketService.on('task:updated', () => fetchTasks());
     };
 
     const handleStatusChange = async (taskId, newStatus) => {
@@ -56,19 +56,15 @@ const CourierDashboard = () => {
             await tasksAPI.updateStatus(taskId, newStatus);
             toast.success(`Statut mis à jour: ${newStatus}`);
             fetchTasks();
-
-            // Si passage en IN_PROGRESS, activer le suivi GPS
-            if (newStatus === 'IN_PROGRESS') {
-                startLocationTracking();
-            } else if (newStatus === 'COMPLETED') {
-                stopLocationTracking();
-            }
+            // GPS géré uniquement par la disponibilité globale
         } catch (error) {
             toast.error('Erreur lors de la mise à jour du statut');
         }
     };
 
     const startLocationTracking = () => {
+        if (locationTracking) return; // Éviter doublons
+
         if (!navigator.geolocation) {
             toast.error('La géolocalisation n\'est pas supportée');
             return;
@@ -77,26 +73,16 @@ const CourierDashboard = () => {
         const id = navigator.geolocation.watchPosition(
             (position) => {
                 const { latitude, longitude } = position.coords;
-
-                // Envoyer la position via Socket.IO
                 socketService.updateLocation(latitude, longitude);
-
                 console.log(`📍 Position envoyée: ${latitude}, ${longitude}`);
             },
-            (error) => {
-                console.error('Erreur de géolocalisation:', error);
-                toast.error('Impossible d\'obtenir votre position');
-            },
-            {
-                enableHighAccuracy: true,
-                timeout: 30000,
-                maximumAge: 0
-            }
+            (error) => console.error('Erreur GPS:', error),
+            { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
         );
 
         setWatchId(id);
         setLocationTracking(true);
-        toast.success('📍 Suivi GPS activé');
+        toast.success('📍 Suivi GPS actif');
     };
 
     const stopLocationTracking = () => {
@@ -104,7 +90,7 @@ const CourierDashboard = () => {
             navigator.geolocation.clearWatch(watchId);
             setWatchId(null);
             setLocationTracking(false);
-            toast.info('📍 Suivi GPS désactivé');
+            // toast.info('📍 Suivi GPS désactivé'); 
         }
     };
 
@@ -112,6 +98,7 @@ const CourierDashboard = () => {
         try {
             await usersAPI.updateAvailability(newAvailability);
             setAvailability(newAvailability);
+            // Le useEffect se chargera d'activer/désactiver le GPS
             toast.success(`Statut: ${newAvailability}`);
         } catch (error) {
             toast.error('Erreur lors de la mise à jour');
