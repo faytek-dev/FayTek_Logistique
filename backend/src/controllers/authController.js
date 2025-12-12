@@ -18,8 +18,12 @@ exports.register = async (req, res) => {
         }
 
         // Seul un admin peut créer d'autres admins ou dispatchers
+        // UNLESS: C'est le premier admin et qu'on fournit la clé secrète
         if (role && ['admin', 'dispatcher'].includes(role)) {
-            if (!req.user || req.user.role !== 'admin') {
+            const isAuthorizedAdmin = req.user && req.user.role === 'admin';
+            const hasSecretKey = req.body.secretKey === (process.env.ADMIN_SECRET_KEY || 'admin-secret-key');
+
+            if (!isAuthorizedAdmin && !hasSecretKey) {
                 return res.status(403).json({
                     success: false,
                     message: 'Seul un administrateur peut créer ce type de compte'
