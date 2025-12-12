@@ -13,9 +13,22 @@ const AdminDashboard = () => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // State complet pour la création de tâche
+    const [newTask, setNewTask] = useState({
+        title: '',
+        description: '',
+        priority: 'medium',
+        pickupStreet: '',
+        pickupCity: 'Paris',
+        deliveryStreet: '',
+        deliveryCity: 'Paris',
+        recipientName: '',
+        recipientPhone: '',
+        assignedCourierId: ''
+    });
+
     // Form States
     const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'courier' });
-    const [newTask, setNewTask] = useState({ title: '', description: '', address: '', priority: 'normal' });
 
     useEffect(() => {
         fetchData();
@@ -55,15 +68,44 @@ const AdminDashboard = () => {
     const handleCreateTask = async (e) => {
         e.preventDefault();
         try {
-            await tasksAPI.create({
-                ...newTask,
-                location: { type: 'Point', coordinates: [0, 0] } // Placeholder loc
-            });
+            // Construction de l'objet Tâche selon le schéma Backend
+            const taskPayload = {
+                title: newTask.title,
+                description: newTask.description,
+                priority: newTask.priority,
+                pickupAddress: {
+                    fullAddress: `${newTask.pickupStreet}, ${newTask.pickupCity}`,
+                    city: newTask.pickupCity,
+                    location: { type: 'Point', coordinates: [2.3522, 48.8566] } // Paris par défaut
+                },
+                deliveryAddress: {
+                    fullAddress: `${newTask.deliveryStreet}, ${newTask.deliveryCity}`,
+                    city: newTask.deliveryCity,
+                    location: { type: 'Point', coordinates: [2.3522, 48.8566] }
+                },
+                recipient: {
+                    name: newTask.recipientName,
+                    phone: newTask.recipientPhone
+                },
+                assignedTo: newTask.assignedCourierId || null,
+                status: newTask.assignedCourierId ? 'IN_PROGRESS' : 'CREATED'
+            };
+
+            await tasksAPI.create(taskPayload);
             toast.success('Tâche créée avec succès !');
-            setNewTask({ title: '', description: '', address: '', priority: 'normal' });
+
+            // Reset form
+            setNewTask({
+                title: '', description: '', priority: 'medium',
+                pickupStreet: '', pickupCity: 'Paris',
+                deliveryStreet: '', deliveryCity: 'Paris',
+                recipientName: '', recipientPhone: '',
+                assignedCourierId: ''
+            });
             fetchData();
         } catch (error) {
-            toast.error('Erreur création tâche');
+            console.error(error);
+            toast.error(error.response?.data?.message || 'Erreur création tâche');
         }
     };
 
@@ -186,26 +228,78 @@ const AdminDashboard = () => {
                 {/* TAB: TASKS */}
                 {activeTab === 'tasks' && (
                     <div className="card">
-                        <h3>📋 Gestion des Tâches</h3>
+                        <h3>📋 Créer une Nouvelle Mission</h3>
 
-                        {/* Création Task */}
-                        <form onSubmit={handleCreateTask} style={{ marginBottom: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '8px' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
-                                <input className="form-input" placeholder="Titre de la tâche" required value={newTask.title} onChange={e => setNewTask({ ...newTask, title: e.target.value })} />
-                                <input className="form-input" placeholder="Adresse" required value={newTask.address} onChange={e => setNewTask({ ...newTask, address: e.target.value })} />
+                        {/* Formulaire complet */}
+                        <form onSubmit={handleCreateTask} style={{ marginBottom: '30px', padding: '20px', background: '#f8f9fa', borderRadius: '12px', border: '1px solid #eee' }}>
+                            {/* Ligne 1 : Titre & Priorité */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '15px', marginBottom: '15px' }}>
+                                <div>
+                                    <label className="form-label">Titre de la mission</label>
+                                    <input className="form-input" required value={newTask.title} onChange={e => setNewTask({ ...newTask, title: e.target.value })} placeholder="Ex: Livraison Colis #1234" />
+                                </div>
+                                <div>
+                                    <label className="form-label">Priorité</label>
+                                    <select className="form-input" value={newTask.priority} onChange={e => setNewTask({ ...newTask, priority: e.target.value })}>
+                                        <option value="low">Basse</option>
+                                        <option value="medium">Moyenne</option>
+                                        <option value="high">Haute</option>
+                                        <option value="urgent">🔴 URGENTE</option>
+                                    </select>
+                                </div>
                             </div>
-                            <textarea className="form-input" placeholder="Description" style={{ marginBottom: '10px' }} value={newTask.description} onChange={e => setNewTask({ ...newTask, description: e.target.value })} />
-                            <button type="submit" className="btn btn-primary">➕ Ajouter la tâche</button>
+
+                            {/* Ligne 2 : Adresses */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '15px' }}>
+                                <div style={{ background: '#e3f2fd', padding: '10px', borderRadius: '8px' }}>
+                                    <h5 style={{ marginBottom: '10px' }}>📍 Départ (Ramassage)</h5>
+                                    <input className="form-input" style={{ marginBottom: '5px' }} placeholder="Rue / Adresse" required value={newTask.pickupStreet} onChange={e => setNewTask({ ...newTask, pickupStreet: e.target.value })} />
+                                    <input className="form-input" placeholder="Ville" required value={newTask.pickupCity} onChange={e => setNewTask({ ...newTask, pickupCity: e.target.value })} />
+                                </div>
+                                <div style={{ background: '#fff3e0', padding: '10px', borderRadius: '8px' }}>
+                                    <h5 style={{ marginBottom: '10px' }}>🏁 Arrivée (Livraison)</h5>
+                                    <input className="form-input" style={{ marginBottom: '5px' }} placeholder="Rue / Adresse" required value={newTask.deliveryStreet} onChange={e => setNewTask({ ...newTask, deliveryStreet: e.target.value })} />
+                                    <input className="form-input" placeholder="Ville" required value={newTask.deliveryCity} onChange={e => setNewTask({ ...newTask, deliveryCity: e.target.value })} />
+                                </div>
+                            </div>
+
+                            {/* Ligne 3 : Destinataire & Coursier */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+                                <div>
+                                    <label className="form-label">Nom Client</label>
+                                    <input className="form-input" required value={newTask.recipientName} onChange={e => setNewTask({ ...newTask, recipientName: e.target.value })} />
+                                </div>
+                                <div>
+                                    <label className="form-label">Tél Client</label>
+                                    <input className="form-input" required value={newTask.recipientPhone} onChange={e => setNewTask({ ...newTask, recipientPhone: e.target.value })} />
+                                </div>
+                                <div>
+                                    <label className="form-label">Assigner Coursier (Optionnel)</label>
+                                    <select className="form-input" value={newTask.assignedCourierId} onChange={e => setNewTask({ ...newTask, assignedCourierId: e.target.value })}>
+                                        <option value="">-- Choisir plus tard --</option>
+                                        {couriers.map(c => (
+                                            <option key={c._id} value={c._id}>🚴 {c.name} ({c.availability})</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button type="submit" className="btn btn-primary btn-block">🚀 Créer la Mission</button>
                         </form>
 
-                        {/* Liste Tasks */}
+                        <h3>📋 Liste des Missions</h3>
                         <table className="data-table">
-                            <thead><tr><th>Titre</th><th>Statut</th><th>Assigné à</th><th>Actions</th></tr></thead>
+                            <thead><tr><th>Titre</th><th>De</th><th>Vers</th><th>Statut</th><th>Coursier</th><th>Action</th></tr></thead>
                             <tbody>
                                 {tasks.map(t => (
                                     <tr key={t._id}>
-                                        <td>{t.title}</td>
-                                        <td><span className={`badge badge-${t.status === 'COMPLETED' ? 'success' : 'warning'}`}>{t.status}</span></td>
+                                        <td>
+                                            <strong>{t.title}</strong><br />
+                                            <small style={{ color: '#666' }}>{t.recipient?.name}</small>
+                                        </td>
+                                        <td>{t.pickupAddress?.city}</td>
+                                        <td>{t.deliveryAddress?.city}</td>
+                                        <td><span className={`badge badge-${t.status === 'COMPLETED' ? 'success' : t.status === 'IN_PROGRESS' ? 'warning' : 'info'}`}>{t.status}</span></td>
                                         <td>{t.assignedTo ? t.assignedTo.name : '⛔ Non assigné'}</td>
                                         <td>
                                             <button className="btn btn-danger btn-sm" onClick={() => handleDeleteTask(t._id)}>🗑️</button>
