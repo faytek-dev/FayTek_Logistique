@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { tasksAPI, usersAPI } from '../services/api';
 import socketService from '../services/socket';
@@ -14,23 +14,7 @@ const CourierDashboard = () => {
     const [locationTracking, setLocationTracking] = useState(false);
     const [watchId, setWatchId] = useState(null);
 
-    useEffect(() => {
-        fetchTasks();
-        setupSocketListeners();
-
-        // Gestion automatique du GPS selon la disponibilité
-        if (availability === 'available' || availability === 'busy') {
-            startLocationTracking();
-        } else {
-            stopLocationTracking();
-        }
-
-        return () => {
-            stopLocationTracking();
-        };
-    }, [availability]); // Dépendance ajoutée
-
-    const fetchTasks = async () => {
+    const fetchTasks = useCallback(async () => {
         try {
             const response = await tasksAPI.getAll();
             setTasks(response.data.data);
@@ -39,9 +23,9 @@ const CourierDashboard = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const setupSocketListeners = () => {
+    const setupSocketListeners = useCallback(() => {
         socketService.onTaskAssigned((data) => {
             toast.info(`📦 Nouvelle tâche: ${data.task.title}`);
             showNotification('Nouvelle tâche assignée', { body: data.task.title });
@@ -49,21 +33,15 @@ const CourierDashboard = () => {
         });
 
         socketService.on('task:updated', () => fetchTasks());
-    };
 
-    const handleStatusChange = async (taskId, newStatus) => {
-        try {
-            await tasksAPI.updateStatus(taskId, newStatus);
-            toast.success(`Statut mis à jour: ${newStatus}`);
-            fetchTasks();
-            // GPS géré uniquement par la disponibilité globale
-        } catch (error) {
-            toast.error('Erreur lors de la mise à jour du statut');
-        }
-    };
+        return () => {
+            socketService.off('task:assigned');
+            socketService.off('task:updated');
+        };
+    }, [fetchTasks]);
 
-    const startLocationTracking = () => {
-        if (locationTracking) return; // Éviter doublons
+    const startLocationTracking = useCallback(() => {
+        if (locationTracking) return;
 
         if (!navigator.geolocation) {
             toast.error('La géolocalisation n\'est pas supportée');
@@ -83,14 +61,39 @@ const CourierDashboard = () => {
         setWatchId(id);
         setLocationTracking(true);
         toast.success('📍 Suivi GPS actif');
-    };
+    }, [locationTracking]);
 
-    const stopLocationTracking = () => {
+    const stopLocationTracking = useCallback(() => {
         if (watchId) {
             navigator.geolocation.clearWatch(watchId);
             setWatchId(null);
             setLocationTracking(false);
-            // toast.info('📍 Suivi GPS désactivé'); 
+        }
+    }, [watchId]);
+
+    useEffect(() => {
+        fetchTasks();
+        const cleanup = setupSocketListeners();
+
+        if (availability === 'available' || availability === 'busy') {
+            startLocationTracking();
+        } else {
+            stopLocationTracking();
+        }
+
+        return () => {
+            if (cleanup) cleanup();
+            stopLocationTracking();
+        };
+    }, [availability, fetchTasks, setupSocketListeners, startLocationTracking, stopLocationTracking]);
+
+    const handleStatusChange = async (taskId, newStatus) => {
+        try {
+            await tasksAPI.updateStatus(taskId, newStatus);
+            toast.success(`Statut mis à jour: ${newStatus}`);
+            fetchTasks();
+        } catch (error) {
+            toast.error('Erreur lors de la mise à jour du statut');
         }
     };
 
@@ -98,7 +101,6 @@ const CourierDashboard = () => {
         try {
             await usersAPI.updateAvailability(newAvailability);
             setAvailability(newAvailability);
-            // Le useEffect se chargera d'activer/désactiver le GPS
             toast.success(`Statut: ${newAvailability}`);
         } catch (error) {
             toast.error('Erreur lors de la mise à jour');
@@ -129,7 +131,6 @@ const CourierDashboard = () => {
 
     return (
         <div className="courier-dashboard">
-            {/* Header */}
             <header className="dashboard-header">
                 <div className="header-content">
                     <div className="user-info">
@@ -146,7 +147,6 @@ const CourierDashboard = () => {
             </header>
 
             <div className="dashboard-container container">
-                {/* Statut et GPS */}
                 <div className="status-section card">
                     <h3>📊 Statut</h3>
                     <div className="status-controls">
@@ -184,7 +184,6 @@ const CourierDashboard = () => {
                     </div>
                 </div>
 
-                {/* Tâches actives */}
                 <div className="tasks-section">
                     <h3>📦 Tâches Actives ({activeTasks.length})</h3>
                     {activeTasks.length === 0 ? (
@@ -244,7 +243,6 @@ const CourierDashboard = () => {
                     )}
                 </div>
 
-                {/* Tâches terminées */}
                 <div className="tasks-section">
                     <h3>✅ Tâches Terminées ({completedTasks.length})</h3>
                     {completedTasks.length > 0 && (

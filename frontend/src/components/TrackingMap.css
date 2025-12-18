@@ -111,3 +111,32 @@
         font-size: 0.8rem;
     }
 }
+
+.center-on-me-btn {
+    position: absolute;
+    bottom: var(--spacing-lg);
+    left: var(--spacing-md);
+    z-index: 1000;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+.center-on-me-btn:hover {
+    transform: scale(1.1);
+    background: var(--secondary);
+}
+
+.center-on-me-btn:active {
+    transform: scale(0.95);
+}

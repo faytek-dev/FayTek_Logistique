@@ -22,8 +22,8 @@ const seedUsers = async () => {
         const users = [
             {
                 name: 'Admin User',
-                email: 'admin@logistics.com',
-                password: 'admin123',
+                email: 'superadmin@logistics.com',
+                password: 'FayTek@2025',
                 role: 'admin',
                 phone: '+33 1 23 45 67 89',
                 isActive: true

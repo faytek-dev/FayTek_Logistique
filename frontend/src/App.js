@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Pages
 import Login from './pages/Login';
@@ -39,6 +41,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 function App() {
     return (
         <AuthProvider>
+            <ToastContainer position="top-right" autoClose={3000} />
             <Router>
                 <Routes>
                     {/* Route publique */}

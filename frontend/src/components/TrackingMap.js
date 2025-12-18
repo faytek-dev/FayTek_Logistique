@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import socketService from '../services/socket';
+import { toast } from 'react-toastify';
 import 'leaflet/dist/leaflet.css';
 import './TrackingMap.css';
 
@@ -26,15 +27,44 @@ const courierIcon = new L.Icon({
     popupAnchor: [0, -32]
 });
 
+// Icône pour l'utilisateur actuel (Point bleu)
+const userIcon = new L.Icon({
+    iconUrl: 'data:image/svg+xml;base64,' + btoa(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#3b82f6">
+      <circle cx="12" cy="12" r="8" fill="#3b82f6" fill-opacity="0.3"/>
+      <circle cx="12" cy="12" r="4" fill="#3b82f6" stroke="white" stroke-width="2"/>
+    </svg>
+  `),
+    iconSize: [24, 24],
+    iconAnchor: [12, 12]
+});
+
 // Composant pour recentrer la carte
-const MapController = ({ center }) => {
+const MapController = ({ center, setCenter, setUserLocation }) => {
     const map = useMap();
 
     useEffect(() => {
-        if (center) {
-            map.setView(center, map.getZoom());
-        }
-    }, [center, map]);
+        // Lancer la détection Leaflet
+        map.locate({ setView: false, enableHighAccuracy: true });
+
+        map.on('locationfound', (e) => {
+            const coords = [e.latlng.lat, e.latlng.lng];
+            map.flyTo(e.latlng, 15);
+            if (setUserLocation) setUserLocation(coords);
+            if (setCenter) setCenter(coords);
+            toast.success("🎯 Position trouvée !");
+        });
+
+        map.on('locationerror', (e) => {
+            console.warn("Erreur GPS:", e.message);
+            toast.error("Impossible de vous localiser (" + e.message + ")");
+        });
+
+        return () => {
+            map.off('locationfound');
+            map.off('locationerror');
+        };
+    }, [map, center]); // Se relance si center change (via triggerLocate)
 
     return null;
 };
@@ -42,6 +72,23 @@ const MapController = ({ center }) => {
 const TrackingMap = ({ couriers = [], center = [48.8566, 2.3522], zoom = 12 }) => {
     const [courierLocations, setCourierLocations] = useState(couriers);
     const [mapCenter, setMapCenter] = useState(center);
+    const [userLocation, setUserLocation] = useState(null);
+
+    // Fonctions gérées par MapController via des événements natifs
+    const triggerLocate = () => {
+        toast.info("🛰️ Recherche de votre position GPS...");
+        // On force le MapController à relancer map.locate()
+        if (mapCenter) {
+            setMapCenter([...mapCenter]); // Déclenche un changement de référence pour le useEffect
+        }
+    };
+
+    useEffect(() => {
+        // Au chargement initial
+        setTimeout(() => {
+            triggerLocate();
+        }, 1000);
+    }, []);
 
     useEffect(() => {
         // Demander toutes les positions au chargement
@@ -117,7 +164,18 @@ const TrackingMap = ({ couriers = [], center = [48.8566, 2.3522], zoom = 12 }) =
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
 
-                <MapController center={mapCenter} />
+                <MapController
+                    center={mapCenter}
+                    setCenter={setMapCenter}
+                    setUserLocation={setUserLocation}
+                />
+
+                {/* Position de l'utilisateur actuel */}
+                {userLocation && (
+                    <Marker position={userLocation} icon={userIcon}>
+                        <Popup>Votre position actuelle</Popup>
+                    </Marker>
+                )}
 
                 {courierLocations.map((courier) => {
                     if (!courier.currentLocation?.coordinates) return null;
@@ -158,6 +216,15 @@ const TrackingMap = ({ couriers = [], center = [48.8566, 2.3522], zoom = 12 }) =
                     );
                 })}
             </MapContainer>
+
+            {/* Bouton de géolocalisation */}
+            <button
+                className="center-on-me-btn"
+                onClick={triggerLocate}
+                title="Ma position"
+            >
+                🎯
+            </button>
 
             <div className="map-legend">
                 <h4>Légende</h4>

@@ -141,7 +141,7 @@ const Login = () => {
                     <div className="demo-accounts">
                         <div className="demo-account">
                             <span className="demo-role">Admin</span>
-                            <code>admin@logistics.com / admin123</code>
+                            <code>superadmin@logistics.com / FayTek@2025</code>
                         </div>
                         <div className="demo-account">
                             <span className="demo-role">Dispatcheur</span>
