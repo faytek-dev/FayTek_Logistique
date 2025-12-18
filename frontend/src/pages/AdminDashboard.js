@@ -13,6 +13,10 @@ const AdminDashboard = () => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // Filtres
+    const [taskFilter, setTaskFilter] = useState('ALL'); // ALL, IN_PROGRESS, etc
+    const [userFilter, setUserFilter] = useState('ALL'); // ALL, courier, available
+
     // State complet pour la création de tâche
     const [newTask, setNewTask] = useState({
         title: '',
@@ -166,10 +170,42 @@ const AdminDashboard = () => {
                 {activeTab === 'overview' && (
                     <>
                         <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', marginBottom: '30px' }}>
-                            <div className="stat-card card"><h4>Total Tâches</h4><p className="stat-value">{stats.totalTasks}</p></div>
-                            <div className="stat-card card"><h4>En cours</h4><p className="stat-value">{stats.activeTasks}</p></div>
-                            <div className="stat-card card"><h4>Coursiers</h4><p className="stat-value">{stats.totalCouriers}</p></div>
-                            <div className="stat-card card"><h4>Disponibles</h4><p className="stat-value">{stats.availableCouriers}</p></div>
+                            <div
+                                className="stat-card card clickable-card"
+                                onClick={() => { setActiveTab('tasks'); setTaskFilter('ALL'); }}
+                                style={{ borderLeft: '4px solid #6366f1', cursor: 'pointer' }}
+                            >
+                                <h4>Total Tâches</h4>
+                                <p className="stat-value">{stats.totalTasks}</p>
+                                <small>Voir tout ›</small>
+                            </div>
+                            <div
+                                className="stat-card card clickable-card"
+                                onClick={() => { setActiveTab('tasks'); setTaskFilter('IN_PROGRESS'); }}
+                                style={{ borderLeft: '4px solid #f59e0b', cursor: 'pointer' }}
+                            >
+                                <h4>En cours</h4>
+                                <p className="stat-value">{stats.activeTasks}</p>
+                                <small>Filtrer ›</small>
+                            </div>
+                            <div
+                                className="stat-card card clickable-card"
+                                onClick={() => { setActiveTab('users'); setUserFilter('courier'); }}
+                                style={{ borderLeft: '4px solid #10b981', cursor: 'pointer' }}
+                            >
+                                <h4>Coursiers</h4>
+                                <p className="stat-value">{stats.totalCouriers}</p>
+                                <small>Voir liste ›</small>
+                            </div>
+                            <div
+                                className="stat-card card clickable-card"
+                                onClick={() => { setActiveTab('users'); setUserFilter('available'); }}
+                                style={{ borderLeft: '4px solid #3b82f6', cursor: 'pointer' }}
+                            >
+                                <h4>Disponibles</h4>
+                                <p className="stat-value">{stats.availableCouriers}</p>
+                                <small>Filtrer ›</small>
+                            </div>
                         </div>
                         <div className="card">
                             <h3>🗺️ Carte Globale</h3>
@@ -209,10 +245,21 @@ const AdminDashboard = () => {
                         </form>
 
                         {/* Liste Users */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                            <h4>Liste des Utilisateurs</h4>
+                            {userFilter !== 'ALL' && (
+                                <button className="btn btn-sm btn-ghost" onClick={() => setUserFilter('ALL')}>❌ Effacer le filtre ({userFilter})</button>
+                            )}
+                        </div>
                         <table className="data-table">
                             <thead><tr><th>Nom</th><th>Email</th><th>Rôle</th><th>Statut</th></tr></thead>
                             <tbody>
-                                {users.map(u => (
+                                {users.filter(u => {
+                                    if (userFilter === 'ALL') return true;
+                                    if (userFilter === 'courier') return u.role === 'courier';
+                                    if (userFilter === 'available') return u.role === 'courier' && u.availability === 'available';
+                                    return true;
+                                }).map(u => (
                                     <tr key={u._id}>
                                         <td>{u.name}</td>
                                         <td>{u.email}</td>
@@ -287,11 +334,19 @@ const AdminDashboard = () => {
                             <button type="submit" className="btn btn-primary btn-block">🚀 Créer la Mission</button>
                         </form>
 
-                        <h3>📋 Liste des Missions</h3>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                            <h3>📋 Liste des Missions</h3>
+                            {taskFilter !== 'ALL' && (
+                                <button className="btn btn-sm btn-ghost" onClick={() => setTaskFilter('ALL')}>❌ Effacer le filtre ({taskFilter})</button>
+                            )}
+                        </div>
                         <table className="data-table">
                             <thead><tr><th>Titre</th><th>De</th><th>Vers</th><th>Statut</th><th>Coursier</th><th>Action</th></tr></thead>
                             <tbody>
-                                {tasks.map(t => (
+                                {tasks.filter(t => {
+                                    if (taskFilter === 'ALL') return true;
+                                    return t.status === taskFilter;
+                                }).map(t => (
                                     <tr key={t._id}>
                                         <td>
                                             <strong>{t.title}</strong><br />
