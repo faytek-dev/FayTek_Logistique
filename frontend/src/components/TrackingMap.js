@@ -85,9 +85,45 @@ const MapController = ({ locateTrigger, setCenter, setUserLocation }) => {
 
 const TrackingMap = ({ couriers = [], center = [33.5731, -7.5898], zoom = 12 }) => {
     const [courierLocations, setCourierLocations] = useState(couriers);
-    const [mapCenter, setMapCenter] = useState(center);
+    const [mapCenter, setMapCenter] = useState(() => {
+        const saved = localStorage.getItem('faytek_map_center');
+        return saved ? JSON.parse(saved) : center;
+    });
     const [userLocation, setUserLocation] = useState(null);
     const [locateTrigger, setLocateTrigger] = useState(0);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isSearching, setIsSearching] = useState(false);
+
+    // Sauvegarder la position quand elle change
+    useEffect(() => {
+        if (mapCenter) {
+            localStorage.setItem('faytek_map_center', JSON.stringify(mapCenter));
+        }
+    }, [mapCenter]);
+
+    const handleSearch = async (e) => {
+        e.preventDefault();
+        if (!searchQuery.trim()) return;
+
+        setIsSearching(true);
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`);
+            const data = await response.json();
+
+            if (data && data.length > 0) {
+                const newPos = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+                setMapCenter(newPos);
+                setUserLocation(newPos);
+                toast.success(`📍 Positionnée sur : ${data[0].display_name.split(',')[0]}`);
+            } else {
+                toast.error("Lieu non trouvé");
+            }
+        } catch (error) {
+            toast.error("Erreur de recherche");
+        } finally {
+            setIsSearching(false);
+        }
+    };
 
     // Fonctions gérées par MapController via des événements natifs
     const triggerLocate = () => {
@@ -228,6 +264,21 @@ const TrackingMap = ({ couriers = [], center = [33.5731, -7.5898], zoom = 12 }) 
                     );
                 })}
             </MapContainer>
+
+            {/* Barre de recherche */}
+            <div className="map-search-bar">
+                <form onSubmit={handleSearch}>
+                    <input
+                        type="text"
+                        placeholder="Rechercher ma position (ex: Casa Nearshore)..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    <button type="submit" disabled={isSearching}>
+                        {isSearching ? '...' : '🔍'}
+                    </button>
+                </form>
+            </div>
 
             {/* Bouton de géolocalisation */}
             <button

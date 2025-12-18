@@ -110,6 +110,55 @@
         right: var(--spacing-md);
         font-size: 0.8rem;
     }
+
+    .map-search-bar {
+        width: 80% !important;
+        left: 10% !important;
+        top: 10px !important;
+    }
+}
+
+.map-search-bar {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    width: 350px;
+    background: white;
+    padding: 5px;
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    display: flex;
+}
+
+.map-search-bar form {
+    display: flex;
+    width: 100%;
+}
+
+.map-search-bar input {
+    flex: 1;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 50px;
+    outline: none;
+    font-size: 0.9rem;
+}
+
+.map-search-bar button {
+    background: var(--primary);
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.map-search-bar button:hover {
+    background: var(--secondary);
 }
 
 .center-on-me-btn {
