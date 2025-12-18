@@ -9,9 +9,9 @@ import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import DispatcherDashboard from './pages/DispatcherDashboard';
 import CourierDashboard from './pages/CourierDashboard';
-
+import TrackingPage from './pages/TrackingPage';
 // Système anti-cache : force le rechargement si une nouvelle version est détectée
-const APP_VERSION = "1.0.9";
+const APP_VERSION = "1.1.0";
 const storedVersion = localStorage.getItem('app_version');
 
 if (storedVersion !== APP_VERSION) {
@@ -56,6 +56,7 @@ function App() {
                 <Routes>
                     {/* Route publique */}
                     <Route path="/login" element={<Login />} />
+                    <Route path="/track/:taskId" element={<TrackingPage />} />
 
                     {/* Routes protégées par rôle */}
                     <Route

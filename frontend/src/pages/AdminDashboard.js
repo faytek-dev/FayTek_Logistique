@@ -14,8 +14,20 @@ const AdminDashboard = () => {
     const [loading, setLoading] = useState(true);
 
     // Filtres
+    // Filtres
     const [taskFilter, setTaskFilter] = useState('ALL'); // ALL, IN_PROGRESS, etc
     const [userFilter, setUserFilter] = useState('ALL'); // ALL, courier, available
+
+    // États pour les visualisations avancées
+    const [showHeatmap, setShowHeatmap] = useState(false);
+    const [selectedTaskDetails, setSelectedTaskDetails] = useState(null);
+
+    // Données simulées pour la Heatmap (zones d'activité)
+    const heatmapPoints = [
+        { lat: 33.5731, lng: -7.5898, intensity: 0.8 }, // Maarif
+        { lat: 33.5333, lng: -7.5833, intensity: 1.0 }, // Polytel
+        { lat: 33.5900, lng: -7.6000, intensity: 0.5 }, // Port
+    ];
 
     // State complet pour la création de tâche
     const [newTask, setNewTask] = useState({
@@ -208,8 +220,24 @@ const AdminDashboard = () => {
                             </div>
                         </div>
                         <div className="card">
-                            <h3>🗺️ Carte Globale</h3>
-                            <TrackingMap couriers={couriers} />
+                            <h3>🗺️ Carte Globale & Intelligence</h3>
+                            <div className="admin-map-container" style={{ height: '500px', position: 'relative' }}>
+                                <div style={{ position: 'absolute', top: 10, right: 60, zIndex: 1000, background: 'white', padding: '5px 10px', borderRadius: '20px', boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }}>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={showHeatmap}
+                                            onChange={(e) => setShowHeatmap(e.target.checked)}
+                                            style={{ accentColor: '#ec4899' }}
+                                        />
+                                        🔥 Vue Thermique
+                                    </label>
+                                </div>
+                                <TrackingMap
+                                    couriers={couriers}
+                                    heatmapData={showHeatmap ? heatmapPoints : null}
+                                />
+                            </div>
                         </div>
                     </>
                 )}
@@ -341,7 +369,7 @@ const AdminDashboard = () => {
                             )}
                         </div>
                         <table className="data-table">
-                            <thead><tr><th>Titre</th><th>De</th><th>Vers</th><th>Statut</th><th>Coursier</th><th>Action</th></tr></thead>
+                            <thead><tr><th>Titre</th><th>De</th><th>Vers</th><th>Statut</th><th>Coursier</th><th>Actions</th></tr></thead>
                             <tbody>
                                 {tasks.filter(t => {
                                     if (taskFilter === 'ALL') return true;
@@ -357,7 +385,27 @@ const AdminDashboard = () => {
                                         <td><span className={`badge badge-${t.status === 'COMPLETED' ? 'success' : t.status === 'IN_PROGRESS' ? 'warning' : 'info'}`}>{t.status}</span></td>
                                         <td>{t.assignedTo ? t.assignedTo.name : '⛔ Non assigné'}</td>
                                         <td>
-                                            <button className="btn btn-danger btn-sm" onClick={() => handleDeleteTask(t._id)}>🗑️</button>
+                                            <div style={{ display: 'flex', gap: '5px' }}>
+                                                <button
+                                                    className="btn btn-sm btn-outline"
+                                                    onClick={() => setSelectedTaskDetails(t)}
+                                                    title="Détails"
+                                                >
+                                                    👁️
+                                                </button>
+                                                <button
+                                                    className="btn btn-sm btn-outline"
+                                                    onClick={() => {
+                                                        const link = `${window.location.origin}/track/${t._id}`;
+                                                        navigator.clipboard.writeText(link);
+                                                        toast.success("🔗 Lien copié !");
+                                                    }}
+                                                    title="Copier lien de suivi"
+                                                >
+                                                    🔗
+                                                </button>
+                                                <button className="btn btn-danger btn-sm" onClick={() => handleDeleteTask(t._id)} title="Supprimer">🗑️</button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -366,6 +414,67 @@ const AdminDashboard = () => {
                     </div>
                 )}
             </div>
+
+            {/* MODAL DÉTAILS TÂCHE & PREUVES */}
+            {selectedTaskDetails && (
+                <div className="modal-overlay" style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(0,0,0,0.8)', zIndex: 2000,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                    <div className="modal-content" style={{
+                        background: 'white', padding: '2rem', borderRadius: '16px',
+                        maxWidth: '600px', width: '90%', maxHeight: '90vh', overflowY: 'auto'
+                    }}>
+                        <h3>📦 Détails de la livraison</h3>
+                        <p><strong>Titre:</strong> {selectedTaskDetails.title}</p>
+                        <p><strong>Statut:</strong> <span className={`badge badge-${selectedTaskDetails.status === 'COMPLETED' ? 'success' : 'warning'}`}>{selectedTaskDetails.status}</span></p>
+
+                        {selectedTaskDetails.proofOfDelivery ? (
+                            <div style={{ marginTop: '1rem', background: '#f8fafc', padding: '1rem', borderRadius: '8px' }}>
+                                <h4>✅ Preuve de Livraison</h4>
+                                <p><small>Livré le: {new Date(selectedTaskDetails.proofOfDelivery.timestamp).toLocaleString()}</small></p>
+
+                                {selectedTaskDetails.proofOfDelivery.signature && (
+                                    <div style={{ marginBottom: '1rem' }}>
+                                        <p><strong>Signature Client:</strong></p>
+                                        <img
+                                            src={selectedTaskDetails.proofOfDelivery.signature}
+                                            alt="Signature"
+                                            style={{ border: '1px solid #ccc', background: 'white', maxWidth: '100%' }}
+                                        />
+                                    </div>
+                                )}
+
+                                {selectedTaskDetails.proofOfDelivery.photo && (
+                                    <div>
+                                        <p><strong>Photo du Colis:</strong></p>
+                                        <img
+                                            src={selectedTaskDetails.proofOfDelivery.photo}
+                                            alt="Preuve Photo"
+                                            style={{ borderRadius: '8px', maxWidth: '100%', maxHeight: '300px' }}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div style={{ marginTop: '1rem', padding: '1rem', background: '#f1f5f9', borderRadius: '8px', textAlign: 'center' }}>
+                                <p>⏳ Aucune preuve de livraison disponible.</p>
+                                <p><small>(Le coursier doit valider la tâche avec signature/photo)</small></p>
+                            </div>
+                        )}
+
+                        <div style={{ marginTop: '2rem', textAlign: 'right' }}>
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => setSelectedTaskDetails(null)}
+                            >
+                                Fermer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

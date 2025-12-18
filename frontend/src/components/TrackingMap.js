@@ -83,11 +83,11 @@ const MapController = ({ locateTrigger, setCenter, setUserLocation }) => {
     return null;
 };
 
-const TrackingMap = ({ couriers = [], center = [33.5876535, -7.6201231], zoom = 18 }) => {
+const TrackingMap = ({ couriers = [], center = [33.5876535, -7.6201231], zoom = 18, heatmapData = null }) => {
     const [courierLocations, setCourierLocations] = useState(couriers);
     const [mapCenter, setMapCenter] = useState(() => {
-        // Force la nouvelle position Polytel précise depuis Google Maps (v1.0.8)
-        if (localStorage.getItem('app_version') !== '1.0.8') return [33.5876535, -7.6201231];
+        // Force la nouvelle position Polytel précise depuis Google Maps (v1.1.0)
+        if (localStorage.getItem('app_version') !== '1.1.0') return [33.5876535, -7.6201231];
         const saved = localStorage.getItem('faytek_map_center');
         return saved ? JSON.parse(saved) : center;
     });
@@ -245,6 +245,20 @@ const TrackingMap = ({ couriers = [], center = [33.5876535, -7.6201231], zoom = 
                     setCenter={setMapCenter}
                     setUserLocation={setUserLocation}
                 />
+
+                {/* Heatmap Layer - Visualisation des zones chaudes */}
+                {heatmapData && heatmapData.map((point, index) => (
+                    <L.Circle
+                        key={`heat-${index}`}
+                        center={[point.lat, point.lng]}
+                        pathOptions={{
+                            fillColor: 'red',
+                            fillOpacity: 0.5 * point.intensity,
+                            color: 'transparent'
+                        }}
+                        radius={500}
+                    />
+                ))}
 
                 {/* Position de l'utilisateur actuel */}
                 {userLocation && (
