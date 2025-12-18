@@ -11,7 +11,7 @@ import DispatcherDashboard from './pages/DispatcherDashboard';
 import CourierDashboard from './pages/CourierDashboard';
 
 // Système anti-cache : force le rechargement si une nouvelle version est détectée
-const APP_VERSION = "1.0.3";
+const APP_VERSION = "1.0.4";
 const storedVersion = localStorage.getItem('app_version');
 
 if (storedVersion !== APP_VERSION) {

@@ -83,11 +83,11 @@ const MapController = ({ locateTrigger, setCenter, setUserLocation }) => {
     return null;
 };
 
-const TrackingMap = ({ couriers = [], center = [33.533298, -7.583330], zoom = 16 }) => {
+const TrackingMap = ({ couriers = [], center = [33.587677, -7.6226841], zoom = 17 }) => {
     const [courierLocations, setCourierLocations] = useState(couriers);
     const [mapCenter, setMapCenter] = useState(() => {
-        // Force POLYTEL si la version est ancienne
-        if (localStorage.getItem('app_version') !== '1.0.3') return [33.533298, -7.583330];
+        // Force la nouvelle position Polytel pour la version 1.0.4
+        if (localStorage.getItem('app_version') !== '1.0.4') return [33.587677, -7.6226841];
         const saved = localStorage.getItem('faytek_map_center');
         return saved ? JSON.parse(saved) : center;
     });
