@@ -40,47 +40,59 @@ const userIcon = new L.Icon({
 });
 
 // Composant pour recentrer la carte
-const MapController = ({ center, setCenter, setUserLocation }) => {
+const MapController = ({ locateTrigger, setCenter, setUserLocation }) => {
     const map = useMap();
 
     useEffect(() => {
-        // Lancer la détection Leaflet
-        map.locate({ setView: false, enableHighAccuracy: true });
+        if (locateTrigger === 0) return;
 
-        map.on('locationfound', (e) => {
+        // Configuration pour une précision maximale
+        const locateOptions = {
+            setView: false,
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        };
+
+        map.locate(locateOptions);
+
+        const onLocationFound = (e) => {
             const coords = [e.latlng.lat, e.latlng.lng];
-            map.flyTo(e.latlng, 15);
+            map.flyTo(e.latlng, 16); // Zoom plus proche pour Casa
             if (setUserLocation) setUserLocation(coords);
             if (setCenter) setCenter(coords);
-            toast.success("🎯 Position trouvée !");
-        });
 
-        map.on('locationerror', (e) => {
+            // On ne toast que si c'est déclenché manuellement ou au bout de 1s
+            toast.success("🎯 Position trouvée !");
+        };
+
+        const onLocationError = (e) => {
             console.warn("Erreur GPS:", e.message);
-            toast.error("Impossible de vous localiser (" + e.message + ")");
-        });
+            toast.error("GPS: " + (e.message.includes("denied") ? "Veuillez autoriser la localisation" : e.message));
+        };
+
+        map.on('locationfound', onLocationFound);
+        map.on('locationerror', onLocationError);
 
         return () => {
-            map.off('locationfound');
-            map.off('locationerror');
+            map.off('locationfound', onLocationFound);
+            map.off('locationerror', onLocationError);
         };
-    }, [map, center]); // Se relance si center change (via triggerLocate)
+    }, [map, locateTrigger, setCenter, setUserLocation]);
 
     return null;
 };
 
-const TrackingMap = ({ couriers = [], center = [48.8566, 2.3522], zoom = 12 }) => {
+const TrackingMap = ({ couriers = [], center = [33.5731, -7.5898], zoom = 12 }) => {
     const [courierLocations, setCourierLocations] = useState(couriers);
     const [mapCenter, setMapCenter] = useState(center);
     const [userLocation, setUserLocation] = useState(null);
+    const [locateTrigger, setLocateTrigger] = useState(0);
 
     // Fonctions gérées par MapController via des événements natifs
     const triggerLocate = () => {
-        toast.info("🛰️ Recherche de votre position GPS...");
-        // On force le MapController à relancer map.locate()
-        if (mapCenter) {
-            setMapCenter([...mapCenter]); // Déclenche un changement de référence pour le useEffect
-        }
+        toast.info("🛰️ Recherche GPS de haute précision...");
+        setLocateTrigger(prev => prev + 1);
     };
 
     useEffect(() => {
@@ -165,7 +177,7 @@ const TrackingMap = ({ couriers = [], center = [48.8566, 2.3522], zoom = 12 }) =
                 />
 
                 <MapController
-                    center={mapCenter}
+                    locateTrigger={locateTrigger}
                     setCenter={setMapCenter}
                     setUserLocation={setUserLocation}
                 />
