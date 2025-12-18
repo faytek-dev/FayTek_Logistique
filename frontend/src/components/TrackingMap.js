@@ -86,8 +86,8 @@ const MapController = ({ locateTrigger, setCenter, setUserLocation }) => {
 const TrackingMap = ({ couriers = [], center = [33.5876535, -7.6201231], zoom = 18 }) => {
     const [courierLocations, setCourierLocations] = useState(couriers);
     const [mapCenter, setMapCenter] = useState(() => {
-        // Force la nouvelle position Polytel précise depuis Google Maps (v1.0.7)
-        if (localStorage.getItem('app_version') !== '1.0.7') return [33.5876535, -7.6201231];
+        // Force la nouvelle position Polytel précise depuis Google Maps (v1.0.8)
+        if (localStorage.getItem('app_version') !== '1.0.8') return [33.5876535, -7.6201231];
         const saved = localStorage.getItem('faytek_map_center');
         return saved ? JSON.parse(saved) : center;
     });
@@ -133,12 +133,10 @@ const TrackingMap = ({ couriers = [], center = [33.5876535, -7.6201231], zoom = 
         setLocateTrigger(prev => prev + 1);
     };
 
-    useEffect(() => {
-        // Au chargement initial
-        setTimeout(() => {
-            triggerLocate();
-        }, 1000);
-    }, []);
+    // Suppression du déclenchement automatique du GPS au chargement
+    // useEffect(() => {
+    //    setTimeout(() => { triggerLocate(); }, 1000);
+    // }, []);
 
     useEffect(() => {
         // Demander toutes les positions au chargement
