@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, LayersControl } from 'react-leaflet';
 import L from 'leaflet';
 import socketService from '../services/socket';
 import { toast } from 'react-toastify';
@@ -207,10 +207,38 @@ const TrackingMap = ({ couriers = [], center = [33.5731, -7.5898], zoom = 12 }) 
                 style={{ height: '100%', width: '100%', borderRadius: 'var(--border-radius-lg)' }}
                 zoomControl={true}
             >
-                <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
+                <LayersControl position="topright">
+                    <LayersControl.BaseLayer checked name="Google Maps">
+                        <TileLayer
+                            attribution="&copy; Google"
+                            url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+                            subdomains={['mt0', 'mt1', 'mt2', 'mt3']}
+                        />
+                    </LayersControl.BaseLayer>
+
+                    <LayersControl.BaseLayer name="Google Satellite">
+                        <TileLayer
+                            attribution="&copy; Google"
+                            url="https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
+                            subdomains={['mt0', 'mt1', 'mt2', 'mt3']}
+                        />
+                    </LayersControl.BaseLayer>
+
+                    <LayersControl.BaseLayer name="Google Hybride">
+                        <TileLayer
+                            attribution="&copy; Google"
+                            url="https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+                            subdomains={['mt0', 'mt1', 'mt2', 'mt3']}
+                        />
+                    </LayersControl.BaseLayer>
+
+                    <LayersControl.BaseLayer name="OpenStreetMap">
+                        <TileLayer
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        />
+                    </LayersControl.BaseLayer>
+                </LayersControl>
 
                 <MapController
                     locateTrigger={locateTrigger}
