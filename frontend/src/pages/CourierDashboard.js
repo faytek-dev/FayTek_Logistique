@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { tasksAPI, usersAPI } from '../services/api';
 import socketService from '../services/socket';
@@ -13,6 +13,13 @@ const CourierDashboard = () => {
     const [availability, setAvailability] = useState(user?.availability || 'offline');
     const [locationTracking, setLocationTracking] = useState(false);
     const [watchId, setWatchId] = useState(null);
+
+    // États pour le modal de preuve de livraison
+    const [showProofModal, setShowProofModal] = useState(false);
+    const [selectedTask, setSelectedTask] = useState(null);
+    const [photo, setPhoto] = useState(null);
+    const canvasRef = useRef(null);
+    const isDrawing = useRef(false);
 
     const fetchTasks = useCallback(async () => {
         try {
@@ -52,7 +59,7 @@ const CourierDashboard = () => {
             (position) => {
                 const { latitude, longitude } = position.coords;
                 socketService.updateLocation(latitude, longitude);
-                console.log(`📍 Position envoyée: ${latitude}, ${longitude}`);
+                // console.log(`📍 Position envoyée: ${latitude}, ${longitude}`);
             },
             (error) => console.error('Erreur GPS:', error),
             { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
@@ -87,14 +94,102 @@ const CourierDashboard = () => {
         };
     }, [availability, fetchTasks, setupSocketListeners, startLocationTracking, stopLocationTracking]);
 
-    const handleStatusChange = async (taskId, newStatus) => {
+    // ========== GESTION DU STATUT ==========
+
+    const handleStatusClick = (task, newStatus) => {
+        if (newStatus === 'COMPLETED') {
+            setSelectedTask(task);
+            setShowProofModal(true);
+            setPhoto(null);
+            // On attend que le modal s'ouvre pour init le canvas si besoin, mais React gère ça
+        } else {
+            updateStatus(task._id, newStatus);
+        }
+    };
+
+    const updateStatus = async (taskId, newStatus, proofData = null) => {
         try {
-            await tasksAPI.updateStatus(taskId, newStatus);
+            await tasksAPI.updateStatus(taskId, newStatus, null, proofData);
             toast.success(`Statut mis à jour: ${newStatus}`);
             fetchTasks();
+            setShowProofModal(false);
         } catch (error) {
             toast.error('Erreur lors de la mise à jour du statut');
         }
+    };
+
+    // ========== SIGNATURE CANVAS ==========
+
+    const startDrawing = (e) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const rect = canvas.getBoundingClientRect();
+
+        const x = (e.clientX || e.touches[0].clientX) - rect.left;
+        const y = (e.clientY || e.touches[0].clientY) - rect.top;
+
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = '#000000';
+        isDrawing.current = true;
+    };
+
+    const draw = (e) => {
+        if (!isDrawing.current) return;
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        const rect = canvas.getBoundingClientRect();
+
+        const x = (e.clientX || e.touches[0].clientX) - rect.left;
+        const y = (e.clientY || e.touches[0].clientY) - rect.top;
+
+        ctx.lineTo(x, y);
+        ctx.stroke();
+    };
+
+    const stopDrawing = () => {
+        isDrawing.current = false;
+    };
+
+    const clearSignature = () => {
+        const canvas = canvasRef.current;
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    };
+
+    // ========== PHOTO CAPTURE ==========
+    const handlePhotoChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPhoto(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    // ========== VALIDER LA LIVRAISON ==========
+    const confirmDelivery = () => {
+        if (!selectedTask) return;
+
+        const canvas = canvasRef.current;
+        const signature = canvas ? canvas.toDataURL('image/png') : null;
+
+        // On vérifie si la signature est vide (un canvas vide fait environ 3000 octets ou moins selon la taille)
+        // Mais ici on n'a pas de validation stricte pour l'instant
+
+        const proofData = {
+            signature,
+            photo
+        };
+
+        updateStatus(selectedTask._id, 'COMPLETED', proofData);
     };
 
     const handleAvailabilityChange = async (newAvailability) => {
@@ -223,7 +318,7 @@ const CourierDashboard = () => {
                                         {task.status === 'CREATED' && (
                                             <button
                                                 className="btn btn-primary"
-                                                onClick={() => handleStatusChange(task._id, 'IN_PROGRESS')}
+                                                onClick={() => handleStatusClick(task, 'IN_PROGRESS')}
                                             >
                                                 🚀 Commencer
                                             </button>
@@ -231,9 +326,9 @@ const CourierDashboard = () => {
                                         {task.status === 'IN_PROGRESS' && (
                                             <button
                                                 className="btn btn-success"
-                                                onClick={() => handleStatusChange(task._id, 'COMPLETED')}
+                                                onClick={() => handleStatusClick(task, 'COMPLETED')}
                                             >
-                                                ✅ Terminer
+                                                ✅ Terminer (Preuve)
                                             </button>
                                         )}
                                     </div>
@@ -257,6 +352,70 @@ const CourierDashboard = () => {
                     )}
                 </div>
             </div>
+
+            {/* MODAL DE PREUVE DE LIVRAISON */}
+            {showProofModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h3>✍️ Preuve de Livraison</h3>
+
+                        <div className="form-group">
+                            <label className="form-label">Signature du client</label>
+                            <div className="signature-pad-container">
+                                <canvas
+                                    ref={canvasRef}
+                                    className="signature-canvas"
+                                    width={400}
+                                    height={200}
+                                    onMouseDown={startDrawing}
+                                    onMouseMove={draw}
+                                    onMouseUp={stopDrawing}
+                                    onMouseLeave={stopDrawing}
+                                    onTouchStart={startDrawing}
+                                    onTouchMove={draw}
+                                    onTouchEnd={stopDrawing}
+                                />
+                            </div>
+                            <button type="button" className="btn btn-ghost btn-sm" onClick={clearSignature}>
+                                🗑️ Effacer la signature
+                            </button>
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">📸 Photo du colis (Optionnel)</label>
+                            <label className="photo-upload-label">
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    capture="environment"
+                                    onChange={handlePhotoChange}
+                                    style={{ display: 'none' }}
+                                />
+                                {photo ? (
+                                    <img src={photo} alt="Preuve" style={{ maxWidth: '100%', maxHeight: '150px' }} />
+                                ) : (
+                                    <span>Cliquez pour prendre une photo</span>
+                                )}
+                            </label>
+                        </div>
+
+                        <div className="modal-actions">
+                            <button
+                                className="btn btn-outline"
+                                onClick={() => setShowProofModal(false)}
+                            >
+                                Annuler
+                            </button>
+                            <button
+                                className="btn btn-success"
+                                onClick={confirmDelivery}
+                            >
+                                ✅ Confirmer la Livraison
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -60,7 +60,7 @@ export const tasksAPI = {
     getById: (id) => api.get(`/api/tasks/${id}`),
     create: (data) => api.post('/api/tasks', data),
     update: (id, data) => api.put(`/api/tasks/${id}`, data),
-    updateStatus: (id, status, note) => api.patch(`/api/tasks/${id}/status`, { status, note }),
+    updateStatus: (id, status, note, proofOfDelivery) => api.patch(`/api/tasks/${id}/status`, { status, note, proofOfDelivery }),
     delete: (id) => api.delete(`/api/tasks/${id}`)
 };
 

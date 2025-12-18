@@ -203,7 +203,7 @@ exports.updateTask = async (req, res) => {
 // @access  Private
 exports.updateTaskStatus = async (req, res) => {
     try {
-        const { status, note } = req.body;
+        const { status, note, proofOfDelivery } = req.body;
 
         let task = await Task.findById(req.params.id);
 
@@ -245,6 +245,15 @@ exports.updateTaskStatus = async (req, res) => {
             task.actualPickupTime = new Date();
         } else if (status === 'COMPLETED' && !task.actualDeliveryTime) {
             task.actualDeliveryTime = new Date();
+
+            // Enregistrement de la preuve de livraison si fournie
+            if (proofOfDelivery) {
+                task.proofOfDelivery = {
+                    signature: proofOfDelivery.signature,
+                    photo: proofOfDelivery.photo,
+                    timestamp: new Date()
+                };
+            }
         }
 
         await task.save();
