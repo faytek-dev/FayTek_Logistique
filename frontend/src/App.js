@@ -4,6 +4,12 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+// Pages
+import Login from './pages/Login';
+import AdminDashboard from './pages/AdminDashboard';
+import DispatcherDashboard from './pages/DispatcherDashboard';
+import CourierDashboard from './pages/CourierDashboard';
+
 // Système anti-cache : force le rechargement si une nouvelle version est détectée
 const APP_VERSION = "1.0.2"; // Changez ce numéro à chaque déploiement important
 const storedVersion = localStorage.getItem('app_version');
@@ -16,12 +22,6 @@ if (storedVersion !== APP_VERSION) {
         window.location.reload(true); // Force le rechargement depuis le serveur
     }, 500);
 }
-
-// Pages
-import Login from './pages/Login';
-import AdminDashboard from './pages/AdminDashboard';
-import DispatcherDashboard from './pages/DispatcherDashboard';
-import CourierDashboard from './pages/CourierDashboard';
 
 // Route protégée
 const ProtectedRoute = ({ children, allowedRoles }) => {
