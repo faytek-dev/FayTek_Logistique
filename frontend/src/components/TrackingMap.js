@@ -83,7 +83,7 @@ const MapController = ({ locateTrigger, setCenter, setUserLocation }) => {
     return null;
 };
 
-const TrackingMap = ({ couriers = [], center = [33.5731, -7.5898], zoom = 12 }) => {
+const TrackingMap = ({ couriers = [], center = [33.5333, -7.5833], zoom = 14 }) => {
     const [courierLocations, setCourierLocations] = useState(couriers);
     const [mapCenter, setMapCenter] = useState(() => {
         const saved = localStorage.getItem('faytek_map_center');
