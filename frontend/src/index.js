@@ -25,16 +25,8 @@ root.render(
     </React.StrictMode>
 );
 
-// Enregistrer le service worker pour PWA
-serviceWorkerRegistration.register({
-    onSuccess: () => console.log('✅ Service Worker registered successfully'),
-    onUpdate: (registration) => {
-        console.log('🔄 New content available, please refresh');
-        if (window.confirm('Une nouvelle version est disponible. Recharger ?')) {
-            window.location.reload();
-        }
-    }
-});
+// Désinstaller le service worker pour supprimer la mise en cache agressive
+serviceWorkerRegistration.unregister();
 
 // Demander la permission pour les notifications
 if ('Notification' in window && Notification.permission === 'default') {

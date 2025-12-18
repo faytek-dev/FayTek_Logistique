@@ -11,16 +11,13 @@ import DispatcherDashboard from './pages/DispatcherDashboard';
 import CourierDashboard from './pages/CourierDashboard';
 
 // Système anti-cache : force le rechargement si une nouvelle version est détectée
-const APP_VERSION = "1.0.2"; // Changez ce numéro à chaque déploiement important
+const APP_VERSION = "1.0.3";
 const storedVersion = localStorage.getItem('app_version');
 
 if (storedVersion !== APP_VERSION) {
-    localStorage.clear(); // Optionnel : nettoie les vieux paramètres
+    localStorage.clear();
     localStorage.setItem('app_version', APP_VERSION);
-    // On attend un petit peu pour laisser le temps au script de s'enregistrer
-    setTimeout(() => {
-        window.location.reload(true); // Force le rechargement depuis le serveur
-    }, 500);
+    window.location.reload(true);
 }
 
 // Route protégée
