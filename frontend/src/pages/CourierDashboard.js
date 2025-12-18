@@ -353,6 +353,20 @@ const CourierDashboard = () => {
                 </div>
             </div>
 
+            {/* Footer de version & Debug */}
+            <div style={{ textAlign: 'center', marginTop: '2rem', padding: '1rem', color: '#64748b', fontSize: '0.8rem' }}>
+                <p>Version v1.1.1</p>
+                <button
+                    onClick={() => {
+                        localStorage.clear();
+                        window.location.reload(true);
+                    }}
+                    style={{ background: 'none', border: '1px solid #cbd5e1', padding: '5px 10px', borderRadius: '5px', marginTop: '5px' }}
+                >
+                    🔄 Forcer la mise à jour
+                </button>
+            </div>
+
             {/* MODAL DE PREUVE DE LIVRAISON */}
             {showProofModal && (
                 <div className="modal-overlay">
