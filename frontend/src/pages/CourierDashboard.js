@@ -13,6 +13,7 @@ const CourierDashboard = () => {
     const [availability, setAvailability] = useState(user?.availability || 'offline');
     const [locationTracking, setLocationTracking] = useState(false);
     const [watchId, setWatchId] = useState(null);
+    const [wakeLock, setWakeLock] = useState(null);
 
     // États pour le modal de preuve de livraison
     const [showProofModal, setShowProofModal] = useState(false);
@@ -47,6 +48,28 @@ const CourierDashboard = () => {
         };
     }, [fetchTasks]);
 
+    // ========== WAKE LOCK (Empêche la mise en veille) ==========
+    const requestWakeLock = async () => {
+        if ('wakeLock' in navigator) {
+            try {
+                const lock = await navigator.wakeLock.request('screen');
+                setWakeLock(lock);
+                console.log('🔓 Wake Lock actif : le téléphone ne dormira pas');
+            } catch (err) {
+                console.error('Erreur Wake Lock:', err);
+            }
+        }
+    };
+
+    const releaseWakeLock = () => {
+        if (wakeLock) {
+            wakeLock.release().then(() => {
+                setWakeLock(null);
+                console.log('🔒 Wake Lock relâché');
+            });
+        }
+    };
+
     const startLocationTracking = useCallback(() => {
         if (locationTracking) return;
 
@@ -55,19 +78,25 @@ const CourierDashboard = () => {
             return;
         }
 
+        // Activer le Wake Lock
+        requestWakeLock();
+
         const id = navigator.geolocation.watchPosition(
             (position) => {
                 const { latitude, longitude } = position.coords;
                 socketService.updateLocation(latitude, longitude);
-                // console.log(`📍 Position envoyée: ${latitude}, ${longitude}`);
             },
             (error) => console.error('Erreur GPS:', error),
-            { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
         );
 
         setWatchId(id);
         setLocationTracking(true);
-        toast.success('📍 Suivi GPS actif');
+        toast.success('📍 Suivi GPS actif (Arrière-plan)');
     }, [locationTracking]);
 
     const stopLocationTracking = useCallback(() => {
@@ -75,8 +104,9 @@ const CourierDashboard = () => {
             navigator.geolocation.clearWatch(watchId);
             setWatchId(null);
             setLocationTracking(false);
+            releaseWakeLock();
         }
-    }, [watchId]);
+    }, [watchId, wakeLock]);
 
     const optimizeRoute = () => {
         if (!navigator.geolocation) {
@@ -279,6 +309,16 @@ const CourierDashboard = () => {
             </header>
 
             <div className="dashboard-container container">
+                {/* Avertissement Batterie Android */}
+                {availability !== 'offline' && (
+                    <div style={{ background: '#fffbeb', border: '1px solid #fef3c7', padding: '1rem', borderRadius: '12px', marginBottom: '1.5rem', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        <span style={{ fontSize: '1.5rem' }}>⚠️</span>
+                        <p style={{ margin: 0, fontSize: '0.85rem', color: '#92400e' }}>
+                            <strong>Important :</strong> Pour que le GPS fonctionne avec l'écran éteint, allez dans <i>Paramètres {'>'} Batterie {'>'} Non restreinte</i> pour cette application.
+                        </p>
+                    </div>
+                )}
+
                 <div className="status-section card">
                     <h3>📊 Statut</h3>
                     <div className="status-controls">
