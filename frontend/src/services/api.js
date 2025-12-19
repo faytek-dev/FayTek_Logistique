@@ -4,7 +4,7 @@ import axios from 'axios';
 const cleanUrl = (url) => url ? url.replace(/\/$/, '') : '';
 
 // Revert to Direct Connection (CORS is now open on backend)
-const API_URL = cleanUrl(process.env.REACT_APP_API_URL) || 'http://localhost:4001';
+const API_URL = cleanUrl(process.env.REACT_APP_API_URL) || 'http://192.168.1.31:4001';
 
 console.log('🌐 API Target (Direct):', API_URL);
 
