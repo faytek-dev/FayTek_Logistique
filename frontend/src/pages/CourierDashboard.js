@@ -78,6 +78,43 @@ const CourierDashboard = () => {
         }
     }, [watchId]);
 
+    const optimizeRoute = () => {
+        if (!navigator.geolocation) {
+            toast.error("GPS non disponible");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition((position) => {
+            const { latitude, longitude } = position.coords;
+
+            // Calculer la distance simple (Euclidienne) pour chaque tâche
+            const sortedTasks = [...tasks].sort((a, b) => {
+                const getCoords = (task) => {
+                    const coords = task.pickupAddress?.location?.coordinates;
+                    if (coords && coords.length === 2) {
+                        return { lat: coords[1], lng: coords[0] };
+                    }
+                    return null;
+                };
+
+                const coordsA = getCoords(a);
+                const coordsB = getCoords(b);
+
+                if (!coordsA) return 1;
+                if (!coordsB) return -1;
+
+                const distA = Math.sqrt(Math.pow(coordsA.lat - latitude, 2) + Math.pow(coordsA.lng - longitude, 2));
+                const distB = Math.sqrt(Math.pow(coordsB.lat - latitude, 2) + Math.pow(coordsB.lng - longitude, 2));
+                return distA - distB;
+            });
+
+            setTasks(sortedTasks);
+            toast.success("⚡ Tournée optimisée par proximité !");
+        }, (error) => {
+            toast.error("Impossible d'obtenir votre position pour l'optimisation");
+        });
+    };
+
     useEffect(() => {
         fetchTasks();
         const cleanup = setupSocketListeners();
@@ -280,7 +317,14 @@ const CourierDashboard = () => {
                 </div>
 
                 <div className="tasks-section">
-                    <h3>📦 Tâches Actives ({activeTasks.length})</h3>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-lg)' }}>
+                        <h3>📦 Tâches Actives ({activeTasks.length})</h3>
+                        {activeTasks.length > 1 && (
+                            <button className="btn btn-sm btn-primary" onClick={optimizeRoute}>
+                                ⚡ Optimiser ma tournée
+                            </button>
+                        )}
+                    </div>
                     {activeTasks.length === 0 ? (
                         <div className="empty-state card">
                             <p>Aucune tâche active pour le moment</p>
@@ -355,7 +399,7 @@ const CourierDashboard = () => {
 
             {/* Footer de version & Debug */}
             <div style={{ textAlign: 'center', marginTop: '2rem', padding: '1rem', color: '#64748b', fontSize: '0.8rem' }}>
-                <p>Version v1.1.1</p>
+                <p>Version v1.1.2</p>
                 <button
                     onClick={() => {
                         localStorage.clear();
